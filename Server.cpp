@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 09:26:30 by mrocher           #+#    #+#             */
-/*   Updated: 2025/05/05 21:40:25 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 22:57:07 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -201,15 +201,21 @@ void Server::newMessage(int index)
 	else
 	{
 		std::string message(buffer, nbytes);
-		std::istringstream iss(message);
-		std::istream_iterator<std::string> begin(iss);
-		std::istream_iterator<std::string> end;
-		std::vector<std::string> tokens(begin, end);
+		std::vector<std::string> tokens = splitMsg(message);
 		int fd = m_pfds[index].fd;
 		if (m_userMap.find(fd) != m_userMap.end())
 		{
 			Client &user = m_userMap[fd];
-			commandDirector(tokens, user);
+			for (size_t i = 0; i < tokens.size(); ++i)
+			{
+				std::vector<std::string> cmdTokens;
+				std::istringstream iss(tokens[i]);
+				std::string word;
+				while (iss >> word)
+					cmdTokens.push_back(word);
+				if (!cmdTokens.empty())
+					commandDirector(cmdTokens, user);
+			}
 		}
 	}
 }

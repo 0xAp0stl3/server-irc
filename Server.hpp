@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 15:05:41 by mrocher           #+#    #+#             */
-/*   Updated: 2025/05/05 15:05:45 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 22:54:50 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ class Server
 
 		std::map<int, Client>			m_userMap;
 		std::map<std::string, Channel>	m_channelMap;
+		std::map<int, std::string>		m_userBuffMap;
 
 	private:
 		int		create(std::string port);

@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 15:29:39 by mrocher           #+#    #+#             */
-/*   Updated: 2025/05/05 21:31:44 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 22:54:34 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,26 +29,17 @@ bool isNumber(char *s)
 
 std::vector<std::string> splitMsg(const std::string &content)
 {
-	std::vector<std::string> tokens;
-	std::string token;
-	for (size_t i = 0; i < content.size(); ++i)
+	std::vector<std::string> lines;
+	size_t start = 0;
+	while (true)
 	{
-		if (content[i] == 4)
-		{
-			if (!token.empty())
-			{
-				tokens.push_back(token);
-				token.clear();
-			}
-		}
-		else
-		{
-			token += content[i];
-		}
+		size_t end = content.find("\r\n", start);
+		if (end == std::string::npos)
+			break;
+		lines.push_back(content.substr(start, end - start));
+		start = end + 2;
 	}
-	if (!token.empty())
-		tokens.push_back(token);
-	return (tokens);
+	return (lines);
 }
 
 bool isCrlf(std::string str)
