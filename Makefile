@@ -3,7 +3,9 @@ CC 				= c++
 CFLAGS			= -Wall -Werror -Wextra -std=c++98
 FILE_EXTENSION	= .cpp
 
-SRCS			= main.cpp Client.cpp Server.cpp Channel.cpp Other.cpp
+SRCS			= main.cpp Client.cpp Server.cpp Channel.cpp Other.cpp command/INVITE.cpp \
+				command/PRIVMSG.cpp command/NICK.cpp command/JOIN.cpp command/QUIT.cpp command/KICK.cpp command/MODE.cpp \
+				command/USER.cpp command/TOPIC.cpp command/PASS.cpp
  		
 ################################################################################
 #                                  Makefile  objs                              #
