@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 14:59:35 by mrocher           #+#    #+#             */
-/*   Updated: 2025/04/19 17:50:25 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 15:40:50 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,6 +67,8 @@ class Channel
 		// Mode : topic protection
 		bool					isTopicProtected(void) const;
 		void					setTopicProtected(bool flag);
+		void					setTopic(std::string topic);
+		std::string				getTopic(void) const;
 		
 		// Mode : key
 		const					std::string& getKey(void) const;
@@ -79,6 +81,8 @@ class Channel
 		// Add / Remove Ops
 		void					addOps(int socket);
 		void					removeOps(int socket);
+		bool					isOps(int socket) const;
+		bool					isAdministrator(int socket) const;
 };
 
 #endif

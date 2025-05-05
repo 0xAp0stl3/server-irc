@@ -6,21 +6,15 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 09:26:30 by mrocher           #+#    #+#             */
-/*   Updated: 2025/04/24 14:41:19 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 15:52:10 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-/*
-Récupère les flags actuels du FD puis ajoute le flag non-bloquant.
-*/
 static int setNonBlocking(int fd)
 {
-	int flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-		return (-1);
-	return (fcntl(fd, F_SETFL, flags | O_NONBLOCK));
+	return (fcntl(fd, F_SETFL, O_NONBLOCK));
 }
 
 /*
@@ -73,49 +67,73 @@ Gestion des cas d'erreurs en conformité avec le RFC 1459.
 void Server::numericReply(int error, Client &user, std::string *context)
 {
 	std::string reply;
+	const std::string nick = user.getNickname();
+	const std::string ctx = (context ? *context : "");
+	
 	switch (error)
 	{
 		case 401:
-			reply = "401 " + user.getNickname() + " :No such nick/channel\r\n";
+			reply = "401 " + nick + " " + ctx + " :No such nick/channel\r\n";
             break;
+
 		case 403:
-			reply = "403 " + (context ? *context : "") + " :No such channel\r\n";
+			reply = "403 " + nick + " " + ctx + " :No such channel\r\n";
 			break;
+			
 		case 404:
-			reply = "404 " + (context ? *context : "") + " :Cannot send to channel\r\n";
+			reply = "404 " + nick + " " + ctx + " :Cannot send to channel\r\n";
 			break;
+			
 		case 441:
-			reply = "441 " + user.getNickname() + " :They aren't on that channel\r\n";
+			reply = "441 " + nick + " " + ctx + " :They aren't on that channel\r\n";
 			break;
+
 		case 442:
-			reply = "442 " + user.getNickname() + " :You're not on that channel\r\n";
+			reply = "442 " + nick + " " + ctx + " :You're not on that channel\r\n";
 			break;
+
 		case 451:
-			reply = "451 " + user.getNickname() + " :You have not registered\r\n";
+			reply = "451 " + nick + " :You have not registered\r\n";
 			break;
+
 		case 461:
-			reply = "461 " + user.getNickname() + " :Not enough parameters\r\n";
+			reply = "461 " + nick + " " + ctx + " :Not enough parameters\r\n";
 			break;
+
 		case 464:
-			reply = "464 " + user.getNickname() + " :Password incorrect\r\n";
+			reply = "464 " + nick + " :Password incorrect\r\n";
 			break;
+
 		case 471:
-			reply = "471 " + (context ? *context : "") + " :Cannot join channel (+l)\r\n";
+			reply = "471 " + nick + " " + ctx + " :Cannot join channel (+l)\r\n";
 			break;
+			
 		case 473:
-			reply = "473 " + (context ? *context : "") + " :Cannot join channel (+i)\r\n";
+			reply = "473 " + nick + " " + ctx + " :Cannot join channel (+i)\r\n";
 			break;
+			
 		case 475:
-			reply = "475 " + (context ? *context : "") + " :Cannot join channel (+k)\r\n";
+			reply = "475 " + nick + " " + ctx + " :Cannot join channel (+k)\r\n";
 			break;
+
 		case 482:
-			reply = "482 " + (context ? *context : "") + " :You're not channel operator\r\n";
+			reply = "482 " + nick + " " + ctx + " :You're not channel operator\r\n";
 			break;
+
+		case 483:
+			reply = "483 " + nick + " " + ctx + " :You're cannot remove admin operator\r\n";
+			break;
+
+		case 484:
+			reply = "484 " + nick + " " + ctx + " :You're cannot add admin operator\r\n";
+			break;
+			
 		case 421:
-			reply = "421 " + user.getNickname() + " :Unknown command\r\n";
+			reply = "421 " + nick + " " + ctx + " :Unknown command\r\n";
 			break;
+
 		default:
-			reply = "421 " + user.getNickname() + " :Unknown error\r\n";
+			reply = "421 " + nick + " " + ctx + " :Unknown error\r\n";
 			break;
 	}
 	sendMessage(user, reply);
@@ -270,7 +288,18 @@ void Server::user(std::vector<std::string> &command, Client &user)
 	}
 	user.setUsername(command[1]);
 	if (!user.getNickname().empty() && !user.getUsername().empty())
+	{
 		user.setRegistered(true);
+		sendWelcome(user);
+	}
+}
+
+void Server::sendWelcome(Client &user)
+{
+	const std::string srv = "irc.server";
+	std::string msg = ":" + srv + 
+		" 001 " + user.getNickname() + " :Welcome to " + srv + ", " + user.getNickname() + "\r\n";
+	sendMessage(user, msg);
 }
 
 /*
@@ -291,6 +320,13 @@ void Server::join(std::vector<std::string> &command, Client &user)
 		Channel newChannel(channelName, user);
 		m_channelMap[channelName] = newChannel;
 	}
+	
+	if (channelName[0] != '#' && channelName[0] != '&')
+	{
+		numericReply(403, user, &channelName);
+		return;
+	}
+	
 	Channel &chan = m_channelMap[channelName];
 	if (!chan.getKey().empty())
 	{
@@ -398,7 +434,7 @@ void Server::kick(std::vector<std::string> &command, Client &user)
 		return;
 	}
 	Channel &chan = m_channelMap[channelName];
-	if (chan.getOperator() == NULL || chan.getOperator()->getSocket() != user.getSocket())
+	if (!chan.isOps(user.getSocket()))
 	{
 		numericReply(482, user, &channelName);
 		return;
@@ -419,6 +455,12 @@ void Server::kick(std::vector<std::string> &command, Client &user)
 		return;
 	}
 
+	if (chan.isAdministrator(targetSocket) && !chan.isAdministrator(user.getSocket()))
+	{
+		numericReply(483, user, &target);
+		return;
+	}
+	
 	chan.delUserSocket(targetSocket);
 	m_userMap[targetSocket].delChannel(chan);
 	std::string kickMsg = ":" + user.getNickname() + " KICK " + channelName + " " + target + " :" + reason + "\r\n";
@@ -443,7 +485,7 @@ void Server::invite(std::vector<std::string> &command, Client &user)
 	}
 	
 	Channel &chan = m_channelMap[channelName];
-	if (chan.getOperator() == NULL || chan.getOperator()->getSocket() != user.getSocket())
+	if (!chan.isOps(user.getSocket()))
 	{
 		numericReply(482, user, &channelName);
 		return;
@@ -482,6 +524,41 @@ void Server::invite(std::vector<std::string> &command, Client &user)
 	sendMessage(user, inviteMSG);
 }
 
+void Server::topic(std::vector<std::string> &command, Client &user)
+{
+	if (command.size() < 2)
+	{
+		numericReply(461, user);
+		return;
+	}
+	std::string channelName = command[1];
+	
+	if (m_channelMap.find(channelName) == m_channelMap.end())
+	{
+		numericReply(403, user, &channelName);
+		return;
+	}
+	
+	Channel &chan = m_channelMap[channelName];
+	if (!chan.isOps(user.getSocket()))
+	{
+		numericReply(482, user, &channelName);
+		return;
+	}
+	
+	if (command.size() > 2)
+	{
+		std::string topic;
+		for (size_t i = 2; i < command.size(); i++)
+			topic += command[i] + " ";
+		if (!topic.empty())
+			topic.erase(topic.size() - 1, 1);
+		chan.setTopic(topic);
+	}
+	std::string reply = ":" + user.getNickname() + " TOPIC " + channelName + " :" + chan.getTopic() + "\r\n";
+	sendMessage(user, reply);
+}
+
 /*
 Vérification des paramètres.
 Vérification des droits.
@@ -505,12 +582,12 @@ void Server::mode(std::vector<std::string> &command, Client &user)
 	}
 	
 	Channel &chan = m_channelMap[channelName];
-	if (chan.getOperator() == NULL || chan.getOperator()->getSocket() != user.getSocket())
+	if (!chan.isOps(user.getSocket()))
 	{
 		numericReply(482, user, &channelName);
 		return;
 	}
-
+	
 	bool adding = true;
 	int	params = 3;
 	std::string response;
@@ -599,10 +676,24 @@ void Server::mode(std::vector<std::string> &command, Client &user)
 						numericReply(401, user, &target);
 						return;
 					}
-					if (adding)
-						chan.addOps(targetSocket);
-					else
+					if (!adding)
+					{
+						if (chan.isAdministrator(targetSocket))
+						{
+							numericReply(483, user, &target);
+							return;
+						}
 						chan.removeOps(targetSocket);
+					}
+					else
+					{
+						if (chan.isAdministrator(targetSocket))
+						{
+							numericReply(484, user, &target);
+							return;
+						}
+						chan.addOps(targetSocket);
+					}
 					response += "o";
 					params++;
 				}
@@ -621,9 +712,25 @@ void Server::mode(std::vector<std::string> &command, Client &user)
 /*
 Permet de quitter proprement.
 */
-void Server::quit(std::string reason, Client &user)
+void Server::quit(const std::vector<std::string> &tokens, Client &user)
 {
-	sendMessage(user, "QUIT :" + reason + "\r\n");
+	std::string reason;
+	if (tokens.size() > 1)
+	{
+		reason = tokens[1];
+		if (!reason.empty() && reason[0] == ':')
+			reason.erase(0, 1);
+		for (size_t i = 2; i < tokens.size(); ++i)
+			reason += " " + tokens[i];
+	}
+	else
+		reason = "Client quit";
+	std::string prefix = ":" + user.getNickname() + "!~" + user.getNickname();
+	std::string msg = prefix + " QUIT :" + reason + "\r\n";
+	for (std::map<int, Client>::iterator it = m_userMap.begin(); it != m_userMap.end(); ++it)
+	{
+		sendMessage(it->second, msg);
+	}
 	disconnectUser(user.getSocket());
 }
 
@@ -636,6 +743,21 @@ void Server::commandDirector(std::vector<std::string> &msg, Client &client)
 		return;
 	std::string command = msg[0];
 	std::transform(command.begin(), command.end(), command.begin(), ::toupper);
+	
+	if (command == "CAP" && msg.size() >= 2 )
+	{
+		if (msg[1] == "LS")
+			sendMessage(client, "CAP * LS :\r\n");
+		if (msg[1] == "END")
+			sendMessage(client, "CAP END\r\n");
+		return;
+	}
+
+	if (command == "PING" && msg.size() >= 2 )
+	{
+		sendMessage(client, "PONG " + msg[1] + "\r\n");
+		return;
+	}
 
 	if (!client.isAuthentificated() || !client.isRegistered())
 	{
@@ -662,10 +784,12 @@ void Server::commandDirector(std::vector<std::string> &msg, Client &client)
 		invite(msg, client);
 	else if (command == "MODE")
 		mode(msg, client);
+	else if (command == "TOPIC")
+		topic(msg, client);
 	else if (command == "QUIT")
-		quit("Client quit", client);
+		quit(msg, client);
 	else
-		numericReply(421, client);
+		numericReply(421, client, &msg[0]);
 }
 
 /*
@@ -735,7 +859,7 @@ int Server::run(void)
 	{
 		std::cerr << "Memory allocation error\n";
 		return (1);
-    }
+	}
 
 	addToPfds(m_listener);
 	while (true)

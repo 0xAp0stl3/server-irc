@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 15:05:41 by mrocher           #+#    #+#             */
-/*   Updated: 2025/04/08 14:41:20 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 15:05:45 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,13 +64,15 @@ class Server
 		void	privmsg(std::vector<std::string> &command, Client &user);
 		void	kick(std::vector<std::string> &command, Client &user);
 		void	invite(std::vector<std::string> &command, Client &user);
+		void	topic(std::vector<std::string> &command, Client &user);
 		void	mode(std::vector<std::string> &command, Client &user);
-		void	quit(std::string reason, Client &user);
+		void	quit(const std::vector<std::string> &tokens, Client &user);
 		
 		void	commandDirector(std::vector<std::string> &msg, Client &user);
 		void	sendMessage(Client &user, std::string msg);
 		void	sendMessage(Client &user, std::string channel_name, std::string msg, bool send_to_sender);
 		void	sendNames(std::string name, Client &user);
+		void	sendWelcome(Client &user);
 
 	public:
 		Server(std::string port, std::string pass);

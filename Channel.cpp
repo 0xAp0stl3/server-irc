@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 14:59:24 by mrocher           #+#    #+#             */
-/*   Updated: 2025/04/19 17:52:19 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 15:41:21 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,6 +131,16 @@ void Channel::setTopicProtected(bool flag)
 	topicProtected = flag;
 }
 
+void Channel::setTopic(std::string topic)
+{
+	m_topic = topic;
+}
+
+std::string Channel::getTopic(void) const
+{
+	return (m_topic);
+}
+
 const std::string& Channel::getKey(void) const
 {
 	return (m_key);
@@ -159,5 +169,18 @@ void Channel::addOps(int socket)
 
 void Channel::removeOps(int socket)
 {
-	m_ops.erase(std::remove(m_ops.begin(), m_ops.end(), socket), m_ops.end());
+	std::vector<int>::iterator it = std::find(m_ops.begin(), m_ops.end(), socket);
+	if (it != m_ops.end())
+		m_ops.erase(it);
+}
+
+bool Channel::isOps(int socket) const
+{
+	return (m_operator && m_operator->getSocket() == socket) || 
+		(std::find(m_ops.begin(), m_ops.end(), socket) != m_ops.end());
+}
+
+bool Channel::isAdministrator(int socket) const
+{
+	return (m_operator && m_operator->getSocket() == socket);
 }
