@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/02 15:29:39 by mrocher           #+#    #+#             */
-/*   Updated: 2025/04/03 16:33:07 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 21:31:44 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,12 +27,26 @@ bool isNumber(char *s)
 	return (true);
 }
 
-std::vector<std::string> splitMsg(std::string content)
+std::vector<std::string> splitMsg(const std::string &content)
 {
 	std::vector<std::string> tokens;
-	std::istringstream iss(content);
 	std::string token;
-	while (iss >> token)
+	for (size_t i = 0; i < content.size(); ++i)
+	{
+		if (content[i] == 4)
+		{
+			if (!token.empty())
+			{
+				tokens.push_back(token);
+				token.clear();
+			}
+		}
+		else
+		{
+			token += content[i];
+		}
+	}
+	if (!token.empty())
 		tokens.push_back(token);
 	return (tokens);
 }

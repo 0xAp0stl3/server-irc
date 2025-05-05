@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 09:26:30 by mrocher           #+#    #+#             */
-/*   Updated: 2025/05/05 16:32:40 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 21:40:25 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -86,6 +86,10 @@ void Server::numericReply(int error, Client &user, std::string *context)
 	
 	switch (error)
 	{
+		case 331:
+			reply = "331 " + nick + " " + ctx + " :No topic is set\r\n";
+			break;
+
 		case 401:
 			reply = "401 " + nick + " " + ctx + " :No such nick/channel\r\n";
             break;
@@ -96,6 +100,10 @@ void Server::numericReply(int error, Client &user, std::string *context)
 			
 		case 404:
 			reply = "404 " + nick + " " + ctx + " :Cannot send to channel\r\n";
+			break;
+
+		case 433:
+			reply = "433 " + nick + " " + ctx + " :Nickname/Username is already in use\r\n";
 			break;
 			
 		case 441:

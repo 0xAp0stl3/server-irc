@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/05 16:31:25 by mrocher           #+#    #+#             */
-/*   Updated: 2025/05/05 16:31:29 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 21:17:29 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,20 @@ void Server::topic(std::vector<std::string> &command, Client &user)
 	}
 	
 	Channel &chan = m_channelMap[channelName];
-	if (!chan.isOps(user.getSocket()))
+	if (command.size() == 2)
+	{
+		std::string topic = chan.getTopic();
+		if (topic.empty())
+			numericReply(331, user, &channelName);
+		else
+		{
+			std::string reply = ":" + user.getNickname() + " 332 " + channelName + " :" + topic + "\r\n";
+			sendMessage(user, reply);
+		}
+		return;
+	}
+	
+	if (chan.isTopicProtected() && !chan.isOps(user.getSocket()))
 	{
 		numericReply(482, user, &channelName);
 		return;

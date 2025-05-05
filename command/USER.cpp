@@ -6,7 +6,7 @@
 /*   By: mrocher <mrocher@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/05 16:29:23 by mrocher           #+#    #+#             */
-/*   Updated: 2025/05/05 16:29:28 by mrocher          ###   ########.fr       */
+/*   Updated: 2025/05/05 21:39:50 by mrocher          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,17 @@ void Server::user(std::vector<std::string> &command, Client &user)
 		numericReply(461, user);
 		return;
 	}
+	std::string username = command[1];
+
+	for (std::map<int, Client>::iterator it = m_userMap.begin(); it != m_userMap.end(); ++it)
+	{
+		if (it->second.getUsername() == username && it->first != user.getSocket())
+		{
+			numericReply(433, user, &username);
+			return;
+		}
+	}
+	
 	user.setUsername(command[1]);
 	if (!user.getNickname().empty() && !user.getUsername().empty())
 	{
